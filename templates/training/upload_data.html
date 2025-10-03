@@ -1,0 +1,208 @@
+
+{% extends "base.html" %}
+
+{% block title %}Upload Training Data - PawCare AI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-upload"></i> Upload Training Data</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Instructions:</strong> Upload images with proper labels to improve the AI model. 
+                        Supported formats: JPG, PNG, JPEG. Maximum file size: 10MB per image.
+                    </div>
+                    
+                    <form id="uploadForm" action="{{ url_for('training.upload_data') }}" method="post" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select class="form-select" id="category" name="category" required>
+                                        <option value="">Select a category</option>
+                                        <option value="healthy_skin">Healthy Skin</option>
+                                        <option value="dermatitis">Dermatitis</option>
+                                        <option value="hot_spots">Hot Spots</option>
+                                        <option value="allergic_reaction">Allergic Reaction</option>
+                                        <option value="fungal_infection">Fungal Infection</option>
+                                        <option value="bacterial_infection">Bacterial Infection</option>
+                                        <option value="parasites">Parasites</option>
+                                        <option value="wounds">Wounds</option>
+                                        <option value="tumors">Tumors</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="severity" class="form-label">Severity (Optional)</label>
+                                    <select class="form-select" id="severity" name="severity">
+                                        <option value="">Not specified</option>
+                                        <option value="mild">Mild</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="severe">Severe</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="images" class="form-label">Select Images</label>
+                            <input type="file" class="form-control" id="images" name="images" 
+                                   accept="image/*" multiple required>
+                            <div class="form-text">You can select multiple images at once.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Additional notes about the images..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="verified" name="verified">
+                                <label class="form-check-label" for="verified">
+                                    I confirm that these images are properly labeled and suitable for training
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('training.dashboard') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                <i class="fas fa-upload"></i> Upload Images
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="card mt-3" style="display: none;">
+                <div class="card-body">
+                    <h6>Upload Progress</h6>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="uploadStatus" class="mt-2"></div>
+                </div>
+            </div>
+            
+            <!-- Preview Area -->
+            <div id="imagePreview" class="card mt-3" style="display: none;">
+                <div class="card-header">
+                    <h6><i class="fas fa-eye"></i> Image Preview</h6>
+                </div>
+                <div class="card-body">
+                    <div id="previewContainer" class="row"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('images').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const previewContainer = document.getElementById('previewContainer');
+    const previewCard = document.getElementById('imagePreview');
+    
+    previewContainer.innerHTML = '';
+    
+    if (files.length > 0) {
+        previewCard.style.display = 'block';
+        
+        for (let i = 0; i < Math.min(files.length, 6); i++) {
+            const file = files[i];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-md-2 col-sm-4 mb-3';
+                col.innerHTML = `
+                    <div class="card">
+                        <img src="${e.target.result}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                        <div class="card-body p-2">
+                            <small class="text-muted">${file.name}</small>
+                        </div>
+                    </div>
+                `;
+                previewContainer.appendChild(col);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        if (files.length > 6) {
+            const moreDiv = document.createElement('div');
+            moreDiv.className = 'col-12';
+            moreDiv.innerHTML = `<p class="text-muted">... and ${files.length - 6} more images</p>`;
+            previewContainer.appendChild(moreDiv);
+        }
+    } else {
+        previewCard.style.display = 'none';
+    }
+});
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressCard = document.getElementById('uploadProgress');
+    const progressBar = progressCard.querySelector('.progress-bar');
+    const statusDiv = document.getElementById('uploadStatus');
+    
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    progressCard.style.display = 'block';
+    
+    const xhr = new XMLHttpRequest();
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            statusDiv.textContent = `Uploading... ${Math.round(percentComplete)}%`;
+        }
+    });
+    
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            if (response.success) {
+                statusDiv.innerHTML = '<div class="alert alert-success">Upload successful!</div>';
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('training.dashboard') }}";
+                }, 2000);
+            } else {
+                statusDiv.innerHTML = `<div class="alert alert-danger">Error: ${response.error}</div>`;
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Images';
+            }
+        } else {
+            statusDiv.innerHTML = '<div class="alert alert-danger">Upload failed. Please try again.</div>';
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Images';
+        }
+    });
+    
+    xhr.addEventListener('error', function() {
+        statusDiv.innerHTML = '<div class="alert alert-danger">Upload failed. Please check your connection.</div>';
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Images';
+    });
+    
+    xhr.open('POST', this.action);
+    xhr.send(formData);
+});
+</script>
+{% endblock %}

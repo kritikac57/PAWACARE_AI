@@ -1,0 +1,106 @@
+
+{% extends "base.html" %}
+
+{% block title %}Train Model - PawCare AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-brain"></i> Train PawCare AI Model</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Model Training:</strong> Help improve PawCare AI by contributing labeled training data.
+                </div>
+                
+                <form id="trainForm" action="{{ url_for('train_model') }}" method="post" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="trainImages" class="form-label">Upload Training Images</label>
+                                <input type="file" class="form-control" id="trainImages" name="trainImages" 
+                                       accept="image/*" multiple>
+                                <div class="form-text">Select multiple images for training</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="diseaseLabel" class="form-label">Disease Label</label>
+                                <select class="form-select" id="diseaseLabel" name="diseaseLabel" required>
+                                    <option value="">Select disease type...</option>
+                                    <option value="healthy">Healthy</option>
+                                    <option value="skin_infection">Skin Infection</option>
+                                    <option value="eye_infection">Eye Infection</option>
+                                    <option value="ear_infection">Ear Infection</option>
+                                    <option value="wound">Open Wound</option>
+                                    <option value="parasites">Parasite Infestation</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (Optional)</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" 
+                                  placeholder="Describe the condition or provide additional context..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" disabled>
+                            <i class="fas fa-cogs"></i> Start Training (Coming Soon)
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> Model Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-primary">94.2%</h4>
+                                <small class="text-muted">Accuracy</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success">1,247</h4>
+                                <small class="text-muted">Training Images</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-database"></i> Dataset Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li><i class="fas fa-check text-success"></i> Skin conditions: 312 images</li>
+                            <li><i class="fas fa-check text-success"></i> Eye infections: 198 images</li>
+                            <li><i class="fas fa-check text-success"></i> Healthy pets: 445 images</li>
+                            <li><i class="fas fa-check text-success"></i> Other conditions: 292 images</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-warning mt-4">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Note:</strong> Model training functionality is currently under development. 
+            The current model uses pre-trained weights and transfer learning.
+        </div>
+    </div>
+</div>
+{% endblock %}

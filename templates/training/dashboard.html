@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Training Dashboard - PawCare AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-tachometer-alt"></i> Training Dashboard</h2>
+        </div>
+    </div>
+    
+    <!-- Training Status Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-cogs"></i> Training Status</h5>
+                </div>
+                <div class="card-body">
+                    {% if training_status.is_training %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-spinner fa-spin"></i> Training in progress...
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <h6>Current Epoch</h6>
+                                <h4 class="text-primary">{{ training_status.current_epoch }}/{{ training_status.total_epochs }}</h4>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Current Loss</h6>
+                                <h4 class="text-warning">{{ "%.4f"|format(training_status.current_loss) }}</h4>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Current Accuracy</h6>
+                                <h4 class="text-success">{{ "%.2f"|format(training_status.current_accuracy * 100) }}%</h4>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-danger" onclick="stopTraining()">
+                                    <i class="fas fa-stop"></i> Stop Training
+                                </button>
+                            </div>
+                        </div>
+                        <div class="progress mt-3">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ (training_status.current_epoch / training_status.total_epochs * 100) if training_status.total_epochs > 0 else 0 }}%">
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-secondary">
+                            <i class="fas fa-pause"></i> No training in progress
+                        </div>
+                        <button class="btn btn-success" onclick="showTrainingModal()">
+                            <i class="fas fa-play"></i> Start New Training
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dataset Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Dataset Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for category in categories %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-left-primary">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                {{ category.replace('_', ' ').title() }}
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                                {{ stats.get(category, 0) }}
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-images fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>Total Images: <span class="badge badge-primary">{{ stats.total }}</span></h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Data Validation</h5>
+                </div>
+                <div class="card-body">
+                    {% if validation.is_valid %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Dataset is ready for training!
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Issues found:
+                            <ul class="mt-2 mb-0">
+                                {% for issue in validation.issues %}
+                                <li>{{ issue }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    {% if validation.recommendations %}
+                        <div class="alert alert-info">
+                            <strong>Recommendations:</strong>
+                            <ul class="mt-2 mb-0">
+                                {% for rec in validation.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('training.upload_data') }}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-upload"></i> Upload Training Data
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('training.models') }}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-brain"></i> Manage Models
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('training.logs') }}" class="btn btn-outline-secondary btn-block">
+                                <i class="fas fa-file-alt"></i> View Logs
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-success btn-block" onclick="exportDataset()">
+                                <i class="fas fa-download"></i> Export Dataset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Training Logs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Event</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in recent_logs %}
+                                    <tr>
+                                        <td>{{ log.timestamp }}</td>
+                                        <td>{{ log.message }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Configuration Modal -->
+<div class="modal fade" id="trainingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Start Training</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="trainingForm">
+                    <div class="mb-3">
+                        <label for="epochs" class="form-label">Number of Epochs</label>
+                        <input type="number" class="form-control" id="epochs" value="50" min="1" max="200">
+                    </div>
+                    <div class="mb-3">
+                        <label for="batchSize" class="form-label">Batch Size</label>
+                        <select class="form-select" id="batchSize">
+                            <option value="16">16</option>
+                            <option value="32" selected>32</option>
+                            <option value="64">64</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="learningRate" class="form-label">Learning Rate</label>
+                        <select class="form-select" id="learningRate">
+                            <option value="0.0001">0.0001</option>
+                            <option value="0.001" selected>0.001</option>
+                            <option value="0.01">0.01</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="startTraining()">Start Training</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTrainingModal() {
+    const modal = new bootstrap.Modal(document.getElementById('trainingModal'));
+    modal.show();
+}
+
+function startTraining() {
+    const epochs = document.getElementById('epochs').value;
+    const batchSize = document.getElementById('batchSize').value;
+    const learningRate = document.getElementById('learningRate').value;
+    
+    fetch('/api/training/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            epochs: parseInt(epochs),
+            batch_size: parseInt(batchSize),
+            learning_rate: parseFloat(learningRate)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error starting training: ' + data.error);
+        }
+    });
+}
+
+function stopTraining() {
+    if (confirm('Are you sure you want to stop the training?')) {
+        fetch('/api/training/stop', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error stopping training: ' + data.error);
+            }
+        });
+    }
+}
+
+function exportDataset() {
+    window.location.href = '/api/dataset/export';
+}
+</script>
+{% endblock %}

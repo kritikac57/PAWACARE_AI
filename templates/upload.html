@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Upload & Analyze - PawCare AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-upload"></i> Upload Pet Photo for Analysis</h4>
+            </div>
+            <div class="card-body">
+                <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select Image</label>
+                        <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
+                        <div class="form-text">Supported formats: JPG, PNG, GIF, BMP (Max size: 16MB)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div id="imagePreview" class="text-center" style="display: none;">
+                            <img id="preview" src="#" alt="Preview" class="img-fluid rounded" style="max-height: 300px;">
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-microscope"></i> Analyze Image
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="loadingDiv" class="text-center mt-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing image... Please wait.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Tips for Best Results</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Use clear, well-lit photos</li>
+                    <li><i class="fas fa-check text-success"></i> Focus on the affected area</li>
+                    <li><i class="fas fa-check text-success"></i> Avoid blurry or dark images</li>
+                    <li><i class="fas fa-check text-success"></i> Multiple angles can help</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('loadingDiv').style.display = 'block';
+});
+</script>
+{% endblock %}
