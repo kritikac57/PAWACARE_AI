@@ -7,14 +7,17 @@ import json
 from datetime import datetime
 
 from training_module import training_bp, training_manager, DISEASE_CATEGORIES
+from api_endpoints import api_bp
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'pawcare_ai_secret_key'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 
-# Register the training blueprint
+# Register blueprints
 app.register_blueprint(training_bp)
+app.register_blueprint(api_bp)
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp'}
 

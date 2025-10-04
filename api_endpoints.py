@@ -14,6 +14,7 @@ training_manager = TrainingManager()
 @api_bp.route('/training/start', methods=['POST'])
 def start_training():
     """Start a new training session"""
+    print("Start training endpoint hit")
     try:
         data = request.get_json()
         
@@ -286,7 +287,7 @@ def start_training():
                 'success': False, 
                 'error': 'Dataset validation failed',
                 'issues': validation_result['issues']
-            })
+            }) 
         
         # Start training in background thread
         training_config = {

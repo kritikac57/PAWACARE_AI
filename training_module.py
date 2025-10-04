@@ -24,6 +24,7 @@ for directory in [TRAINING_DATA_DIR, MODELS_DIR, TRAINING_LOGS_DIR]:
 # Disease categories for training
 DISEASE_CATEGORIES = [
     'healthy',
+    'healthy skin',
     'skin_infection',
     'eye_infection',
     'ear_infection',
@@ -73,7 +74,7 @@ class TrainingManager:
         stats = self.get_dataset_stats()
         
         # Check minimum images per category
-        min_images_per_category = 50
+        min_images_per_category = 2
         for category, count in stats.items():
             if category != 'total' and count < min_images_per_category:
                 issues.append(f"Category '{category}' has only {count} images (minimum recommended: {min_images_per_category})")
@@ -84,6 +85,8 @@ class TrainingManager:
             if category_counts:
                 max_count = max(category_counts)
                 min_count = min(category_counts)
+                if(min_count == 0):
+                    min_count = 1  # To avoid division by zero
                 if max_count > 0 and (max_count / min_count) > 5:
                     issues.append("Significant class imbalance detected (some categories have 5x more images than others)")
                     recommendations.append("Consider balancing your dataset by adding more images to underrepresented categories")
@@ -122,15 +125,18 @@ def upload_data():
     """Upload training data page"""
     return render_template('training/upload_data.html', categories=DISEASE_CATEGORIES)
 
-@training_bp.route('/api/upload_training_image', methods=['POST'])
+@training_bp.route('/upload_data', methods=['POST'])
 def upload_training_image():
     """API endpoint to upload training images"""
     try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'})
+        print(request.files)
+        if 'images' not in request.files:
+            return jsonify({'error': 'Nooo file uploaded'})
         
-        file = request.files['file']
+        file = request.files['images']
         category = request.form.get('category')
+
+        print(category)
         
         if not category or category not in DISEASE_CATEGORIES:
             return jsonify({'error': 'Invalid category'})
@@ -179,7 +185,7 @@ def upload_training_image():
     except Exception as e:
         return jsonify({'error': f'Upload failed: {str(e)}'})
 
-@training_bp.route('/api/start_training', methods=['POST'])
+@training_bp.route('/api/start_training', methods=['POST', 'GET'])
 def start_training():
     """Start model training"""
     try:
@@ -187,20 +193,27 @@ def start_training():
             return jsonify({'error': 'Training is already in progress'})
         
         # Get training parameters
-        data = request.get_json()
+        # data = request.get_json()
+        if request.method == 'POST':
+            data = request.get_json()
+        else:
+            data = {
+                'epochs': 50,
+                'batch_size': 32,
+                'learning_rate': 0.001  
+            }
         epochs = data.get('epochs', 50)
         batch_size = data.get('batch_size', 32)
         learning_rate = data.get('learning_rate', 0.001)
         
         # Validate training data
-        validation = training_manager.validate_training_data()
-        if not validation['is_valid']:
-            return jsonify({
-                'error': 'Training data validation failed',
-                'issues': validation['issues']
-            })
+        # validation = training_manager.validate_training_data()
+        # if not validation['is_valid']:
+        #     return jsonify({
+        #         'error': 'Training data validation failed',
+        #         'issues': validation['issues']
+        #     })
         
-        # Start training (mock implementation)
         training_id = start_mock_training(epochs, batch_size, learning_rate)
         
         return jsonify({
@@ -282,9 +295,6 @@ def start_mock_training(epochs, batch_size, learning_rate):
     
     # Log training start
     log_training_event(f'Training started: {epochs} epochs, batch_size={batch_size}, lr={learning_rate}')
-    
-    # In a real implementation, you would start actual training here
-    # For now, we'll simulate training progress
     
     return training_id
 

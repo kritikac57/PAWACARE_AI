@@ -255,8 +255,8 @@ function startTraining() {
     const epochs = document.getElementById('epochs').value;
     const batchSize = document.getElementById('batchSize').value;
     const learningRate = document.getElementById('learningRate').value;
-    
-    fetch('/api/training/start', {
+    alert(`Starting training with ${epochs} epochs, batch size ${batchSize}, learning rate ${learningRate}`);
+    fetch('/training/api/start_training', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
